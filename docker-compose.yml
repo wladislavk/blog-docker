@@ -1,0 +1,54 @@
+version: "2.1"
+
+services:
+    db:
+        build: ../${DB_DIR}
+        env_file:
+            - .env
+        environment:
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+        ports:
+            - "${DB_PORT}:3306"
+        volumes:
+            - "../${DB_DIR}/data:/var/lib/db"
+            - "../${DB_DIR}/dump:/docker-entrypoint-initdb.d"
+        restart: always
+
+    api:
+        build:
+            context: "../${API_DIR}"
+            args:
+                API_DOMAIN: ${API_DOMAIN}
+        env_file:
+            - .env
+        ports:
+            - "${API_PORT}:80"
+        volumes:
+            - "../${API_DIR}:/var/www"
+        links:
+            - db
+
+    frontend:
+        build:
+            context: "../${FRONTEND_DIR}"
+            args:
+                FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
+        env_file:
+            - .env
+        environment:
+            - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+        ports:
+            - "${FRONTEND_PORT}:80"
+        volumes:
+            - "../${FRONTEND_DIR}:/var/www"
+        links:
+            - api
+ 
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - "${PHPMYADMIN_PORT}:80"
+        links:
+            - db
